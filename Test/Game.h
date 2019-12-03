@@ -61,6 +61,8 @@ private:
     // Device resources.
     std::unique_ptr<DX::DeviceResources>    m_deviceResources;
 
+	std::unique_ptr<DirectX::Mouse>         m_mouse;
+	std::unique_ptr<DirectX::Keyboard>      m_keyboard;
 
     // Rendering loop timer.
     DX::StepTimer                           m_timer;

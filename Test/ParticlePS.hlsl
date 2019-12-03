@@ -114,7 +114,7 @@ float4 movingTexture3(Texture2D t, float2 inUV)
 	return retUV;
 }
 
-float Distortion(float2 center, float r, float d_r, float2 tex)
+float distortion(float2 center, float r, float d_r, float2 tex)
 {
 	//中心から今のピクセルまでの距離
 	float dist = distance(center, tex);
@@ -123,10 +123,10 @@ float Distortion(float2 center, float r, float d_r, float2 tex)
 	return 1 - smoothstep(r - d_r, r, dist);
 }
 
-float4 Portal(float2 center, float r, float d_r, float2 tx)
+float4 portal(float2 center, float r, float d_r, float2 tx)
 {
 	//穴のゆがみ
-	float d = Distortion(center, r, d_r, tx);
+	float d = distortion(center, r, d_r, tx);
 	//画像のUV座標
 	float2 uv = lerp(tx, center, d);
 	//サンプリング画像(歪んだ画像（穴なし））
@@ -156,7 +156,7 @@ float4 task2(Texture2D t, float2 inUV)
 float4 task3(Texture2D t, float2 inUV)
 {
 	float2 uv = inUV;
-	float4 retUV = distance(float2(uv.x * 800.f / 600.f + -200.f/600.f/2.f, uv.y), float2(.5f, .5f)) < .5f ? t.Sample(samLinear, uv) : float4(0, 0, 0, 0);
+	float4 retUV = distance(float2(uv.x * 800.f / 600.f + -200.f / 600.f / 2.f, uv.y), float2(.5f, .5f)) < .5f ? t.Sample(samLinear, uv) : float4(0, 0, 0, 0);
 	return retUV;
 }
 
@@ -194,7 +194,8 @@ float4 task7(Texture2D t, float2 inUV)
 	{
 		float s = perlinNoise(inUV * 4);
 		bool b = (s - Time.z < 0);
-		bool p = (inUV < .5f);
+		bool p = (inUV.x < .5f);
+		// xor = どちらか一方がtrueならtrue
 		if ((b && !p) || (!b && p))
 			return t.Sample(samLinear, inUV);
 		return float4(0, 0, 0, 1);
@@ -203,7 +204,7 @@ float4 task7(Texture2D t, float2 inUV)
 	{
 		float s = noise(inUV * 20);
 		float4 color = float4(s, s, s, 1);
-		if (color.r - Time.z < 0)
+		if (s - Time.z < 0)
 			return color;
 		return float4(0, 0, 0, 0);
 	}
@@ -303,7 +304,114 @@ float4 taskB5(Texture2D t, float2 inUV)
 	return diff;
 }
 
+// テスト
+float4 testB1(Texture2D t, float2 inUV)
+{
+	float tt = (sin(Time.x) + 1) / 2 + .1f;
+	return portal(float2(.5f, .5f), .5f, tt, inUV);
+}
+
+// テスト
+float4 testB2(Texture2D t, float2 inUV)
+{
+	float2 center = float2(.5f, .5f);
+	float r = .4f;
+	float d_r = .1f;
+
+	float D1 = distortion(center, r, d_r, inUV);
+	float4 P1 = portal(center, r, d_r, inUV);
+
+	float2 center2 = float2(.3f, .7f);
+	float r2 = .2f;
+	float d_r2 = .1f;
+
+	float D2 = distortion(center2, r2, d_r2, inUV);
+	float4 P2 = portal(center2, r2, d_r2, inUV);
+
+	return lerp(P1, P2, step(D1, D2));
+}
+
+// テスト
+float4 testB3(Texture2D t, float2 inUV)
+{
+	float2 center = (float2)Mouse;
+	float r = .4f;
+	float d_r = .1f;
+
+	float D1 = distortion(center, r, d_r, inUV);
+	float4 P1 = portal(center, r, d_r, inUV);
+
+	float2 center2 = float2(.3f, .7f);
+	float r2 = .2f;
+	float d_r2 = .1f;
+
+	float D2 = distortion(center2, r2, d_r2, inUV);
+	float4 P2 = portal(center2, r2, d_r2, inUV);
+
+	float4 back = tex2.Sample(samLinear, inUV);
+
+	if (Mouse.z > .1f)
+	{
+		back = float4(0, 0, 0, 1);
+	}
+
+	float4 L1 = lerp(P1, back, step(1, D1));
+	float4 L2 = lerp(P2, back, step(1, D2));
+
+	return lerp(L1, L2, step(D1, D2));
+}
+
+SamplerState MeshTextureSampler
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
+};
+
+// テスト
+float4 oldTV(Texture2D t, float2 inUV)
+{
+	float2 uv = inUV;
+
+	uv -= .5f;
+
+	float vignette = length(uv);
+
+	uv /= 1 - vignette * .2f;
+
+	if (max(abs(uv.y), abs(uv.x)) > .5f)
+		return float4(0, 0, 0, 1);
+
+	float2 texUV = uv + .5f;
+
+	texUV.x += sin(texUV.y * 100) * .002f;
+
+	texUV.x += (random(floor(texUV.y * 100) + Time.z) - .5f) * .01f;
+
+	float4 base = t.Sample(samLinear, texUV);
+
+	float3 col;
+	col.r = t.Sample(samLinear, texUV).r; // col.r = base.r;
+	col.g = t.Sample(samLinear, texUV + float2(.02f, 0)).g;
+	col.b = t.Sample(samLinear, texUV + float2(.04f, 0)).b;
+
+	if (random(floor(texUV.y * 500) + Time.z) < .001f)
+	{
+		col.r = random(uv + float2(123 + Time.z, 0));
+		col.g = random(uv + float2(123 + Time.z, 1));
+		col.b = random(uv + float2(123 + Time.z, 2));
+	}
+
+	col *= 1 - vignette * 1.3f;
+
+	base = float4(col, base.a);
+
+	return base;
+}
+
 float4 main(PS_INPUT input) : SV_TARGET
 {
-	return taskB5(tex, input.Tex);
+	//return testB3(tex, input.Tex);
+	//return task7(tex, input.Tex);
+	return oldTV(tex, input.Tex);
 }

@@ -188,7 +188,10 @@ void EffectManager::Draw(DirectX::SimpleMath::Matrix world, DirectX::SimpleMath:
 	cbuff.matProj = proj.Transpose();
 	cbuff.matWorld = world.Transpose();
 	//Time		x:経過時間(トータル秒)	y:1Fの経過時間(秒）	z:反復（サインカーブ） w:未使用（暫定で１）
-	cbuff.Time = Vector4(m_timer.GetTotalSeconds(), m_timer.GetElapsedSeconds(), sinf(m_timer.GetTotalSeconds()), 1);
+	cbuff.Time = Vector4(float(m_timer.GetTotalSeconds()), float(m_timer.GetElapsedSeconds()), sinf(float(m_timer.GetTotalSeconds())), 1);
+
+	auto mouse = Mouse::Get().GetState();
+	cbuff.Mouse = Vector4(mouse.x / 800.f, mouse.y / 600.f, mouse.leftButton, mouse.rightButton);
 
 	//定数バッファの内容更新
 	context->UpdateSubresource(m_CBuffer.Get(), 0, NULL, &cbuff, 0, 0);

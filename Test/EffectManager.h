@@ -17,6 +17,7 @@ public:
 		DirectX::SimpleMath::Matrix		matView;
 		DirectX::SimpleMath::Matrix		matProj;
 		DirectX::SimpleMath::Vector4	Time;
+		DirectX::SimpleMath::Vector4	Mouse;
 	};
 	static const std::vector<D3D11_INPUT_ELEMENT_DESC> INPUT_LAYOUT;
 	void Create(DX::DeviceResources* deviceResources, const wchar_t* name,int count);
