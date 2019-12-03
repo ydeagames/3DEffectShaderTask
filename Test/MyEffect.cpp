@@ -43,7 +43,7 @@ void MyEffect::Update(DX::StepTimer timer)
 	//	Initialize(m_startLife, m_startPosition, m_startVelocity);
 
 	//}
-	m_life -= m_timer.GetElapsedSeconds();
+	m_life -= float(m_timer.GetElapsedSeconds());
 }
 
 

@@ -68,7 +68,7 @@ void Game::Update(DX::StepTimer const& timer)
     elapsedTime;
 	float time = float(timer.GetTotalSeconds());
 
-	m_camera = Vector3(5*sin(0), 0, 5*cos(0));
+	m_camera = Vector3(5*sinf(0.f), 0, 5*cosf(0.f));
 	m_view = Matrix::CreateLookAt(m_camera,
 		Vector3::Zero, Vector3::UnitY);
 
@@ -203,7 +203,7 @@ void Game::CreateDeviceDependentResources()
 		float(backBufferWidth) / float(backBufferHeight), 0.1f, 1000.f);
 
 	m_effectManager = new EffectManager();
-	m_effectManager->Create(m_deviceResources.get(), L"Resources\\Textures\\melon.png",1);
+	m_effectManager->Create(m_deviceResources.get(), L"Resources\\Textures\\kafuru.gif",1);
 	//m_effectManager->Initialize(1,Vector3(0,0,0));
 	//m_effectManager->InitializeNormal(1, Vector3(0, 0, 0));
 	m_effectManager->InitializeCorn(5, Vector3(0, 0, 0),Vector3(0,1,0));

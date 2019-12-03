@@ -92,6 +92,50 @@ float4 movingTexture(Texture2D t, float2 inUV)
 	return retUV;
 }
 
+// うごめく画像
+float4 movingTexture2(Texture2D t, float2 inUV)
+{
+	float2 uv = inUV;
+	float ran = perlinNoise(uv * 20);
+	uv.x += (ran - 0.5f) * 0.1f * (3 - Time.x);
+	float4 retUV = t.Sample(samLinear, uv);
+
+	return retUV;
+}
+
+// うごめく画像
+float4 movingTexture3(Texture2D t, float2 inUV)
+{
+	float2 uv = inUV;
+	float ran = perlinNoise(uv * 10);
+	uv.x += (ran - 0.5f) * 0.1f * (5 - Time.x);
+	float4 retUV = t.Sample(samLinear, uv);
+
+	return retUV;
+}
+
+float Distortion(float2 center, float r, float d_r, float2 tex)
+{
+	//中心から今のピクセルまでの距離
+	float dist = distance(center, tex);
+	//半径ｒのゆがみを作る幅はd_r
+	//戻り値　歪みの値（歪みの偏差）
+	return 1 - smoothstep(r - d_r, r, dist);
+}
+
+float4 Portal(float2 center, float r, float d_r, float2 tx)
+{
+	//穴のゆがみ
+	float d = Distortion(center, r, d_r, tx);
+	//画像のUV座標
+	float2 uv = lerp(tx, center, d);
+	//サンプリング画像(歪んだ画像（穴なし））
+	float4 base = tex.Sample(samLinear, uv);
+	//画像に穴をあける処理
+	//戻り値　穴をあけた後の色情報
+	return lerp(base, float4(0, 0, 0, 0), step(1, d));
+}
+
 // タスク
 float4 task1(Texture2D t, float2 inUV)
 {
@@ -165,7 +209,101 @@ float4 task7(Texture2D t, float2 inUV)
 	}
 }
 
+// タスク
+float4 taskB1(Texture2D t, float2 inUV)
+{
+	float2 uv = floor(inUV * 20.0f) / 20.0f;
+	float4 diff = t.Sample(samLinear, uv);
+	return diff;
+}
+
+// タスク
+float4 taskB2(Texture2D t, float2 inUV)
+{
+	float2 uv = floor(inUV * 20.0f) / 20.0f;
+	//float4 diff = t.Sample(samLinear,uv);
+	float4 diff = blur(inUV);
+	return diff;
+}
+
+// タスク
+float4 taskB3(Texture2D t, float2 inUV)
+{
+	float2 uv = floor(inUV * 20.0f) / 20.0f;
+	//float4 diff = t.Sample(samLinear,uv);
+	float4 diff = movingTexture(t, inUV);
+	return diff;
+}
+
+// タスク
+float4 taskB4(Texture2D t, float2 inUV)
+{
+	float2 uv = inUV;
+	uv.x /= 5.0f;
+	uv.y /= 2.0f;
+
+	uv.x += frac(3 / 5.0f);
+	uv.y += floor(3 / 5.0f) / 2.0f;
+
+	float4 diff = t.Sample(samLinear, uv);
+	return diff;
+}
+
+// タスク
+float4 taskB5(Texture2D t, float2 inUV)
+{
+	float4 diff = (float4)0;
+
+	//float4 diff = t.Sample(samLinear,uv);
+	float2 u = inUV;
+	u.x += sin(Time.x - 5) * 0.05f;
+	diff = t.Sample(samLinear, u);
+	if (Time.x < 1.0f)
+	{
+		float time = 400 * Time.x;
+		float2 uv = inUV;
+		uv /= 5.0f;
+		uv = floor(uv * time) / time;
+
+		uv.x += 0.25f;
+		uv.y += 0.25f;
+		diff = t.Sample(samLinear, uv);
+	}
+	else if (Time.x < 2.0f)
+	{
+		float2 uv = inUV;
+		uv /= 5.0f;
+		uv.x += 0.25f;
+		uv.y += 0.25f;
+		diff = t.Sample(samLinear, uv);
+	}
+	else if (Time.x < 3.0f)
+	{
+		float2 uv = inUV;
+		uv /= 3.0f;
+		uv = floor(uv * 400 * (Time.x - 2)) / (400 * (Time.x - 2));
+		uv.x += 0.5f;
+		uv.y += 0.1f;
+		diff = movingTexture2(t, uv);
+	}
+	else if (Time.x < 4.0f)
+	{
+		float2 uv = inUV;
+		uv /= 3.0f;
+		uv.x += 0.5f;
+		uv.y += 0.1f;
+		diff = t.Sample(samLinear, uv);
+	}
+	else if (Time.x < 5.0f)
+	{
+		float2 uv = inUV;
+		diff = movingTexture3(t, uv);
+	}
+
+	return diff;
+}
+
 float4 main(PS_INPUT input) : SV_TARGET
 {
-	return task7(tex, input.Tex);
+	return taskB5(tex, input.Tex);
 }
