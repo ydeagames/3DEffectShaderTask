@@ -67,7 +67,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
-        HWND hwnd = CreateWindowEx(0, L"TestWindowClass", L"3Dエフェクト", WS_OVERLAPPEDWINDOW,
+        HWND hwnd = CreateWindowEx(0, L"TestWindowClass", L"3Dエフェクト - 課題 - 山口寛雅", WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
             nullptr);
         // TODO: Change to CreateWindowEx(WS_EX_TOPMOST, L"TestWindowClass", L"Test", WS_POPUP,

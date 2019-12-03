@@ -305,60 +305,62 @@ float4 taskB5(Texture2D t, float2 inUV)
 }
 
 // テスト
-float4 testB1(Texture2D t, float2 inUV)
+float4 testB1Custom(Texture2D t, float2 inUV, float2 c1, float2 p1)
 {
-	float tt = (sin(Time.x) + 1) / 2 + .1f;
-	return portal(float2(.5f, .5f), .5f, tt, inUV);
+	return portal(c1, p1.x, p1.y, inUV);
 }
 
 // テスト
-float4 testB2(Texture2D t, float2 inUV)
+float4 testB1(Texture2D t, float2 inUV)
 {
-	float2 center = float2(.5f, .5f);
-	float r = .4f;
-	float d_r = .1f;
+	float tt = (sin(Time.x) + 1) / 2 + .1f;
+	return testB1Custom(t, inUV, float2(.5f, .5f), float2(.5f, tt));
+}
 
-	float D1 = distortion(center, r, d_r, inUV);
-	float4 P1 = portal(center, r, d_r, inUV);
+// テスト
+float4 testB2Custom(Texture2D t, float2 inUV, float2 c1, float2 c2, float2 p1, float2 p2)
+{
+	float D1 = distortion(c1, p1.x, p1.y, inUV);
+	float4 P1 = portal(c1, p1.x, p1.y, inUV);
 
-	float2 center2 = float2(.3f, .7f);
-	float r2 = .2f;
-	float d_r2 = .1f;
-
-	float D2 = distortion(center2, r2, d_r2, inUV);
-	float4 P2 = portal(center2, r2, d_r2, inUV);
+	float D2 = distortion(c2, p2.x, p2.y, inUV);
+	float4 P2 = portal(c2, p2.x, p2.y, inUV);
 
 	return lerp(P1, P2, step(D1, D2));
 }
 
 // テスト
-float4 testB3(Texture2D t, float2 inUV)
+float4 testB2(Texture2D t, float2 inUV)
 {
-	float2 center = (float2)Mouse;
-	float r = .4f;
-	float d_r = .1f;
+	return testB2Custom(t, inUV, float2(.5f, .5f), float2(.3f, .7f), float2(.4f, .1f), float2(.2f, .1f));
+}
 
-	float D1 = distortion(center, r, d_r, inUV);
-	float4 P1 = portal(center, r, d_r, inUV);
+// テスト
+float4 testB3Custom(Texture2D t, float2 inUV, float2 c1, float2 c2, float2 p1, float2 p2, bool mouseEnable = false)
+{
+	float D1 = distortion(c1, p1.x, p1.y, inUV);
+	float4 P1 = portal(c1, p1.x, p1.y, inUV);
 
-	float2 center2 = float2(.3f, .7f);
-	float r2 = .2f;
-	float d_r2 = .1f;
-
-	float D2 = distortion(center2, r2, d_r2, inUV);
-	float4 P2 = portal(center2, r2, d_r2, inUV);
+	float D2 = distortion(c2, p2.x, p2.y, inUV);
+	float4 P2 = portal(c2, p2.x, p2.y, inUV);
 
 	float4 back = tex2.Sample(samLinear, inUV);
 
-	if (Mouse.z > .1f)
+	if (mouseEnable && Mouse.z > .1f)
 	{
-		back = float4(0, 0, 0, 1);
+		back = float4(0, 0, 0, 0);
 	}
 
 	float4 L1 = lerp(P1, back, step(1, D1));
 	float4 L2 = lerp(P2, back, step(1, D2));
 
 	return lerp(L1, L2, step(D1, D2));
+}
+
+// テスト
+float4 testB3(Texture2D t, float2 inUV)
+{
+	return testB3Custom(t, inUV, (float2)Mouse, float2(.3f, .7f), float2(.4f, .1f), float2(.2f, .1f));
 }
 
 SamplerState MeshTextureSampler
@@ -369,7 +371,7 @@ SamplerState MeshTextureSampler
 };
 
 // テスト
-float4 oldTV(Texture2D t, float2 inUV)
+float4 oldTV(Texture2D t, float2 inUV, bool useMouse = false)
 {
 	float2 uv = inUV;
 
@@ -383,17 +385,31 @@ float4 oldTV(Texture2D t, float2 inUV)
 		return float4(0, 0, 0, 1);
 
 	float2 texUV = uv + .5f;
+	float2 pUV = uv + .5f;
 
 	texUV.x += sin(texUV.y * 100) * .002f;
 
 	texUV.x += (random(floor(texUV.y * 100) + Time.z) - .5f) * .01f;
 
-	float4 base = t.Sample(samLinear, texUV);
-
+	float4 base;
 	float3 col;
-	col.r = t.Sample(samLinear, texUV).r; // col.r = base.r;
-	col.g = t.Sample(samLinear, texUV + float2(.02f, 0)).g;
-	col.b = t.Sample(samLinear, texUV + float2(.04f, 0)).b;
+	if (!useMouse)
+	{
+		base = t.Sample(samLinear, texUV);
+
+		col.r = t.Sample(samLinear, texUV).r; // col.r = base.r;
+		col.g = t.Sample(samLinear, texUV + float2(.02f, 0)).g;
+		col.b = t.Sample(samLinear, texUV + float2(.04f, 0)).b;
+	}
+	else
+	{
+		float size = (1 + Time.z) / 4.0f;
+		base = portal((float2)Mouse, size.x, size.x / 2.0f, pUV);
+
+		col.r = portal((float2)Mouse, size.x, size.x / 2.0f, pUV).r;
+		col.g = portal((float2)Mouse, size.x, size.x / 2.0f, pUV + float2(0.002f, 0)).g;
+		col.b = portal((float2)Mouse, size.x, size.x / 2.0f, pUV + float2(0.004f, 0)).b;
+	}
 
 	if (random(floor(texUV.y * 500) + Time.z) < .001f)
 	{
@@ -409,9 +425,67 @@ float4 oldTV(Texture2D t, float2 inUV)
 	return base;
 }
 
+// タスク
+float4 taskC1(Texture2D t, float2 inUV)
+{
+	return testB1Custom(t, inUV, float2(0.5f, 0.5f), float2(0.3f, 0.1f));
+}
+
+// タスク
+float4 taskC2(Texture2D t, float2 inUV)
+{
+	return testB3Custom(t, inUV, float2(0.5f, 0.5f), float2(0.5f, 0.5f), float2(0.3f, 0.1f), float2(0.3f, 0.1f));
+}
+
+// タスク
+float4 taskC3(Texture2D t, float2 inUV)
+{
+	return testB2Custom(t, inUV, float2(.5f, .5f), float2(.3f, .7f), float2(.3f, .1f), float2(.3f, .1f));
+}
+
+// タスク
+float4 taskC4(Texture2D t, float2 inUV)
+{
+	return testB3Custom(t, inUV, float2(.5f, .5f), float2(.2f, .4f), float2(.3f, .1f), float2(.5f, .05f));
+}
+
+// タスク
+float4 taskC5(Texture2D t, float2 inUV)
+{
+	return testB3Custom(t, inUV, (float2)Mouse, float2(.2f, .4f), float2(.3f, .1f), float2(.3f, .05f));
+}
+
+// タスク
+float4 taskC6(Texture2D t, float2 inUV)
+{
+	return testB3Custom(t, inUV, (float2)Mouse, float2(.2f, .4f), float2(.3f, .1f), float2(.3f, .05f), true);
+}
+
+// タスク
+float4 taskC7(Texture2D t, float2 inUV)
+{
+	return oldTV(t, inUV);
+}
+
+// タスク
+float4 taskC8(Texture2D t, float2 inUV)
+{
+	float4 tv = oldTV(t, inUV, true);
+
+	if (tv.a < 0.5f)
+	{
+		if (!Mouse.z)
+			tv = float4(0, 0, 0, 1);
+		else
+			tv = tex2.Sample(samLinear, inUV);
+	}
+
+	return tv;
+}
+
 float4 main(PS_INPUT input) : SV_TARGET
 {
 	//return testB3(tex, input.Tex);
-	//return task7(tex, input.Tex);
-	return oldTV(tex, input.Tex);
+	return taskC8(tex, input.Tex);
+	//return oldTV(tex, input.Tex);
 }
