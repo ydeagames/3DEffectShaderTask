@@ -483,9 +483,77 @@ float4 taskC8(Texture2D t, float2 inUV)
 	return tv;
 }
 
+// テスト
+float4 testD1(Texture2D t, float2 inUV)
+{
+	float2 uv = normalize(inUV);
+	float2 o = normalize(float2(0, 1));
+
+	float d = dot(uv, o);
+
+	float4 base = t.Sample(samLinear, inUV);
+
+	if (d < Time.z)
+		base.a = 0;
+
+
+	//float l = length(inUV);
+	//if (l < .5f)
+	//	base.a = 0;
+	//if (l > 1.f)
+	//	base.a = 0;
+
+	float4 tom = tex2.Sample(samLinear, inUV);
+
+	if (tom.a < .1f)
+		base.a = 0;
+
+	return base;
+}
+
+// テスト
+float4 testD2(Texture2D t, float2 inUV)
+{
+	float2 uv = inUV * 10;
+	float2 o = normalize(float2(.5f, .5f));
+
+	float2 v = uv - floor(uv);
+
+	v = normalize(v);
+	float d = dot(v, o);
+
+	float4 base = t.Sample(samLinear, inUV);
+
+	float time = (1 - Time.z) / 2.f;
+
+	base.rgb -= max(0, (1 - d));
+
+	return base;
+}
+
+// テスト
+float4 testD3(Texture2D t, float2 inUV)
+{
+	float2 uv = inUV * 10;
+	float2 o = normalize(float2(0, 1));
+
+	float2 v = uv - floor(uv);
+
+	v = normalize(v);
+	float d = dot(v, o);
+
+	float4 base = t.Sample(samLinear, inUV);
+
+	float time = (1 - Time.z) / 2.f;
+
+	base.a -= max(0, (d - Time.z));
+
+	return base;
+}
+
 float4 main(PS_INPUT input) : SV_TARGET
 {
-	//return testB3(tex, input.Tex);
-	return taskC8(tex, input.Tex);
+	return testD2(tex, input.Tex);
+	//return taskC8(tex, input.Tex);
 	//return oldTV(tex, input.Tex);
 }

@@ -22,7 +22,7 @@ void EffectManager::Create(DX::DeviceResources * deviceResources, const wchar_t*
 
 	//const wchar_t* name = L"Resources\\Textures\\image01.png";
 	DirectX::CreateWICTextureFromFile(deviceResources->	GetD3DDevice(), name , nullptr, m_texture.GetAddressOf());
-	DirectX::CreateWICTextureFromFile(deviceResources->GetD3DDevice(), L"Resources\\Textures\\floor.png", nullptr, m_texture2.GetAddressOf());
+	DirectX::CreateWICTextureFromFile(deviceResources->GetD3DDevice(), L"Resources\\Textures\\image01.png", nullptr, m_texture2.GetAddressOf());
 
 	// コンパイルされたシェーダファイルを読み込み
 	BinaryFile VSData = BinaryFile::LoadFile(L"Resources/Shaders/ParticleVS.cso");
